@@ -3,13 +3,24 @@ import { createClient } from "@/lib/supabase/server";
 import { getUserAndProfile } from "@/lib/access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe, PRICE_CENTS, siteUrl } from "@/lib/stripe";
+import { logError } from "@/lib/log";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
   const ctx = await getUserAndProfile(supabase);
   const base = siteUrl(request);
   if (!ctx) return NextResponse.redirect(`${base}/login?next=/assinar`, 303);
+  try {
+    return NextResponse.redirect(await createCheckout(ctx, base), 303);
+  } catch (e) {
+    await logError(supabase, "stripe/checkout", e);
+    return NextResponse.redirect(`${base}/assinar?erro=pagamento`, 303);
+  }
+}
 
+type Ctx = NonNullable<Awaited<ReturnType<typeof getUserAndProfile>>>;
+
+async function createCheckout(ctx: Ctx, base: string) {
   const stripe = getStripe();
   let customerId = ctx.profile?.stripe_customer_id ?? null;
   if (!customerId) {
@@ -46,5 +57,6 @@ export async function POST(request: Request) {
     success_url: `${base}/app?assinatura=ok`,
     cancel_url: `${base}/assinar`,
   });
-  return NextResponse.redirect(session.url!, 303);
+  if (!session.url) throw new Error("Stripe não devolveu o link do checkout");
+  return session.url;
 }

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { accessInfo, getUserAndProfile } from "@/lib/access";
 import { AIError } from "@/lib/claude";
+import { logError } from "@/lib/log";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const fail = (code: string, status: number) => NextResponse.json({ code }, { status });
 
@@ -20,9 +22,9 @@ export async function requireAccess(opts: { consumeCredit?: boolean } = {}) {
   return { supabase, user: ctx.user, profile: ctx.profile } as const;
 }
 
-export function aiErrorResponse(e: unknown) {
+export async function aiErrorResponse(e: unknown, supabase: SupabaseClient, route: string) {
+  await logError(supabase, route, e);
   if (e instanceof AIError) return fail(e.code, e.status);
-  console.error(e);
   return fail("upstream_error", 500);
 }
 

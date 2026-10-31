@@ -70,3 +70,14 @@ end $$;
 revoke execute on function public.consume_ai_credit(int) from public, anon;
 grant execute on function public.consume_ai_credit(int) to authenticated;
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
+
+-- Registro de erros do servidor (para diagnóstico). Usuários só podem inserir; ninguém lê pela API.
+create table public.app_errors (
+  id bigint generated always as identity primary key,
+  user_id uuid default auth.uid() references auth.users(id) on delete set null,
+  route text not null,
+  message text not null,
+  created_at timestamptz not null default now()
+);
+alter table public.app_errors enable row level security;
+create policy "errors_insert_own" on public.app_errors for insert to authenticated with check (user_id = (select auth.uid()));

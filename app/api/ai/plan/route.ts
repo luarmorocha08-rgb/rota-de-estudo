@@ -17,6 +17,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ plan });
   } catch (e) {
-    return aiErrorResponse(e);
+    return aiErrorResponse(e, ctx.supabase, "ai/plan");
   }
 }

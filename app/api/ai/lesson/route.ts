@@ -24,6 +24,6 @@ export async function POST(request: Request) {
     await ctx.supabase.from("lessons").upsert({ user_id: ctx.user.id, key, req, content: lesson });
     return NextResponse.json({ lesson });
   } catch (e) {
-    return aiErrorResponse(e);
+    return aiErrorResponse(e, ctx.supabase, "ai/lesson");
   }
 }

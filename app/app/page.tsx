@@ -8,7 +8,7 @@ import { MARKUP } from "./markup";
 export const metadata: Metadata = { title: "Estudar" };
 export const dynamic = "force-dynamic";
 
-const APP_VERSION = "1";
+const APP_VERSION = "2";
 
 export default async function StudyApp() {
   const supabase = await createClient();

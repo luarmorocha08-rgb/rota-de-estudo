@@ -14,7 +14,8 @@ const STATUS: Record<string, string> = {
 };
 const fmt = (d: string | null | undefined) => (d ? new Date(d).toLocaleDateString("pt-BR") : "–");
 
-export default async function AccountPage() {
+export default async function AccountPage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
+  const { erro } = await searchParams;
   const ctx = await getUserAndProfile(await createClient());
   const p = ctx?.profile ?? null;
   const a = accessInfo(p);
@@ -23,6 +24,7 @@ export default async function AccountPage() {
       <header className="nav"><div className="w"><Brand href="/app" /><nav><Link className="link" href="/app">Voltar ao app</Link></nav></div></header>
       <main className="w page" style={{ maxWidth: 720 }}>
         <h1 style={{ fontSize: 40 }}>Minha conta</h1>
+        {erro === "portal" && <p className="alert err" role="alert">Não conseguimos abrir o gerenciamento da assinatura agora. Tente de novo em alguns minutos.</p>}
         <section className="panel" style={{ padding: 24, display: "grid", gap: 16 }}>
           <h2 style={{ fontSize: 20 }}>Dados</h2>
           <dl className="kv">

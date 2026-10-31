@@ -2,7 +2,12 @@ import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 
-const client = new Anthropic();
+let client: Anthropic | null = null;
+function getClient() {
+  if (!process.env.ANTHROPIC_API_KEY) throw new AIError("ai_not_configured", 500, "ANTHROPIC_API_KEY não configurada na Vercel");
+  client ??= new Anthropic();
+  return client;
+}
 export const MODEL = process.env.CLAUDE_MODEL || "claude-opus-5-5";
 
 // Fallback automático no servidor quando o modelo recusa um pedido (só nos modelos que aceitam)
@@ -14,8 +19,9 @@ function fallbackParams() {
 }
 
 export class AIError extends Error {
-  constructor(public code: string, public status = 502) {
-    super(code);
+  constructor(public code: string, public status = 502, public detail?: string) {
+    super(detail ?? code);
+    this.name = "AIError";
   }
 }
 
@@ -61,15 +67,17 @@ export type Plan = z.infer<typeof PlanSchema>;
 
 function mapError(e: unknown): never {
   if (e instanceof AIError) throw e;
-  if (e instanceof Anthropic.RateLimitError) throw new AIError("rate_limited", 429);
-  if (e instanceof Anthropic.AuthenticationError) throw new AIError("upstream_error", 500);
-  if (e instanceof Anthropic.APIError) throw new AIError("upstream_error", 502);
-  throw new AIError("upstream_error", 502);
+  const detail = e instanceof Error ? `${e.name}${(e as { status?: number }).status ? " " + (e as { status?: number }).status : ""}: ${e.message}` : String(e);
+  if (e instanceof Anthropic.RateLimitError) throw new AIError("rate_limited", 429, detail);
+  if (e instanceof Anthropic.AuthenticationError) throw new AIError("ai_not_configured", 500, detail);
+  if (e instanceof Anthropic.PermissionDeniedError) throw new AIError("ai_not_configured", 500, detail);
+  if (e instanceof Anthropic.APIError) throw new AIError("upstream_error", 502, detail);
+  throw new AIError("upstream_error", 502, detail);
 }
 
 async function generate<T extends z.ZodType>(schema: T, prompt: string, effort: "low" | "medium"): Promise<z.infer<T>> {
   try {
-    const res = await client.beta.messages.parse({
+    const res = await getClient().beta.messages.parse({
       model: MODEL,
       max_tokens: 16000,
       output_config: { effort, format: betaZodOutputFormat(schema) },
@@ -146,7 +154,7 @@ export async function chatAboutLesson(lesson: Lesson, turns: ChatTurn[]) {
     lesson.secoes.map((s) => `## ${s.titulo}\n${s.texto}`).join("\n")).slice(0, 8000);
   const system = `Você é o professor desta aula numa plataforma de estudos. Responda dúvidas do aluno em português do Brasil, de forma curta (até 150 palavras), didática, encorajadora e com exemplo quando ajudar. Se a pergunta fugir do assunto, responda brevemente e traga de volta para a aula. Pode usar **negrito** e listas com "- ".\n\nCONTEÚDO DA AULA:\n${resumo}`;
   try {
-    const res = await client.beta.messages.create({
+    const res = await getClient().beta.messages.create({
       model: MODEL,
       max_tokens: 4000,
       system,

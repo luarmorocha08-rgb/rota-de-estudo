@@ -25,6 +25,6 @@ export async function POST(request: Request) {
     const text = await chatAboutLesson(parsed.data, turns);
     return NextResponse.json({ text });
   } catch (e) {
-    return aiErrorResponse(e);
+    return aiErrorResponse(e, ctx.supabase, "ai/chat");
   }
 }

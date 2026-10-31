@@ -6,7 +6,8 @@ import { Brand } from "../components";
 
 export const metadata: Metadata = { title: "Assinar" };
 
-export default async function SubscribePage() {
+export default async function SubscribePage({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
+  const { erro } = await searchParams;
   const ctx = await getUserAndProfile(await createClient());
   const a = accessInfo(ctx?.profile ?? null);
   return (
@@ -18,6 +19,9 @@ export default async function SubscribePage() {
           <h1 style={{ fontSize: "clamp(30px,4vw,44px)" }}>{a.subscribed ? "Você já é Pro. Bons estudos!" : "Continue sua rota sem perder nada"}</h1>
           <p className="lead">Seu XP, sua sequência, suas aulas e seus planos ficam salvos. Assine para continuar estudando com a IA.</p>
         </div>
+        {erro === "pagamento" && (
+          <p className="alert err" role="alert" style={{ maxWidth: 520 }}>Não conseguimos abrir o pagamento agora. Tente de novo em alguns minutos. Se continuar, fale com o suporte.</p>
+        )}
         <section className="panel plan-card">
           <span className="tag ok">Rota de Estudo Pro</span>
           <div className="price">R$ 29,90 <small>/mês</small></div>

@@ -58,7 +58,9 @@ const ERRS = {
   noai:"A IA está indisponível no momento. Tente de novo em instantes.",
   limit:"Você atingiu o limite de uso da IA por hoje. Volte amanhã!",
   no_access:"Seu período de teste terminou. Assine para continuar.",
-  upstream_error:"A IA demorou para responder. Tente de novo."
+  upstream_error:"A IA não conseguiu responder agora. Tente de novo em instantes.",
+  ai_not_configured:"A IA ainda não está configurada no servidor. Avise o suporte.",
+  rate_limited:"Muita gente usando a IA agora. Tente de novo em 1 minuto."
 };
 const errMsg = e => ERRS[e && e.code] || "Algo deu errado na conexão. Tente de novo.";
 const ICON = {
