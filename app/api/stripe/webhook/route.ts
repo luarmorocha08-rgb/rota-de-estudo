@@ -6,11 +6,17 @@ import { createAdminClient } from "@/lib/supabase/admin";
 async function syncSubscription(sub: Stripe.Subscription) {
   const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
   const end = sub.items?.data?.[0]?.current_period_end;
-  const update = {
+  const update: Record<string, string | null> = {
     subscription_status: sub.status,
     current_period_end: end ? new Date(end * 1000).toISOString() : null,
   };
+  if (sub.status === "canceled") update.canceled_at = new Date((sub.canceled_at ?? sub.ended_at ?? Date.now() / 1000) * 1000).toISOString();
   const admin = createAdminClient();
+  // Marca a data da primeira assinatura ativa (sem sobrescrever)
+  if (sub.status === "active" || sub.status === "trialing") {
+    const started = new Date((sub.start_date ?? Date.now() / 1000) * 1000).toISOString();
+    await admin.from("profiles").update({ subscribed_at: started }).eq("stripe_customer_id", customerId).is("subscribed_at", null);
+  }
   const { data, error } = await admin.from("profiles").update(update).eq("stripe_customer_id", customerId).select("id");
   if (error) throw new Error(`Falha ao atualizar o perfil: ${error.message}`);
   // Se o cliente ainda não estava ligado ao perfil, liga pelo user_id salvo na assinatura

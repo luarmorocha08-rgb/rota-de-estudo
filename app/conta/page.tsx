@@ -5,6 +5,7 @@ import { accessInfo, getUserAndProfile } from "@/lib/access";
 import { updatePassword } from "../actions";
 import { AuthForm } from "../auth-form";
 import { Brand } from "../components";
+import { isAdmin } from "@/lib/admin";
 
 export const metadata: Metadata = { title: "Minha conta" };
 
@@ -21,7 +22,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const a = accessInfo(p);
   return (
     <>
-      <header className="nav"><div className="w"><Brand href="/app" /><nav><Link className="link" href="/app">Voltar ao app</Link></nav></div></header>
+      <header className="nav"><div className="w"><Brand href="/app" /><nav>{isAdmin(ctx?.user.email) && <Link className="link" href="/admin">Painel</Link>}<Link className="link" href="/app">Voltar ao app</Link></nav></div></header>
       <main className="w page" style={{ maxWidth: 720 }}>
         <h1 style={{ fontSize: 40 }}>Minha conta</h1>
         {erro === "portal" && <p className="alert err" role="alert">Não conseguimos abrir o gerenciamento da assinatura agora. Tente de novo em alguns minutos.</p>}

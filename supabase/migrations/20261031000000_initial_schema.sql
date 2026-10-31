@@ -81,3 +81,18 @@ create table public.app_errors (
 );
 alter table public.app_errors enable row level security;
 create policy "errors_insert_own" on public.app_errors for insert to authenticated with check (user_id = (select auth.uid()));
+
+-- Datas da assinatura (para o painel /admin)
+alter table public.profiles add column if not exists subscribed_at timestamptz, add column if not exists canceled_at timestamptz;
+create index if not exists profiles_subscribed_at_idx on public.profiles (subscribed_at);
+create index if not exists lessons_created_at_idx on public.lessons (created_at);
+
+-- Atividade resumida por usuário para o painel /admin (só o servidor com a chave secreta chama)
+create or replace function public.admin_user_activity()
+returns table (user_id uuid, updated_at timestamptz, xp int)
+language sql security invoker set search_path = '' stable as $$
+  select s.user_id, s.updated_at, coalesce((s.data->'rde-game'->>'xp')::int, 0)
+  from public.user_state s;
+$$;
+revoke execute on function public.admin_user_activity() from public, anon, authenticated;
+grant execute on function public.admin_user_activity() to service_role;
