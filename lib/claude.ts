@@ -3,7 +3,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 
 let client: Anthropic | null = null;
-function getClient() {
+export function getClient() {
   if (!process.env.ANTHROPIC_API_KEY) throw new AIError("ai_not_configured", 500, "ANTHROPIC_API_KEY não configurada na Vercel");
   client ??= new Anthropic();
   return client;

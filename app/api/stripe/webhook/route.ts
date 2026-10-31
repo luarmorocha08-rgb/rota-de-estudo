@@ -11,11 +11,13 @@ async function syncSubscription(sub: Stripe.Subscription) {
     current_period_end: end ? new Date(end * 1000).toISOString() : null,
   };
   const admin = createAdminClient();
-  const { data } = await admin.from("profiles").update(update).eq("stripe_customer_id", customerId).select("id");
+  const { data, error } = await admin.from("profiles").update(update).eq("stripe_customer_id", customerId).select("id");
+  if (error) throw new Error(`Falha ao atualizar o perfil: ${error.message}`);
   // Se o cliente ainda não estava ligado ao perfil, liga pelo user_id salvo na assinatura
   const userId = sub.metadata?.user_id;
   if ((!data || data.length === 0) && userId) {
-    await admin.from("profiles").update({ ...update, stripe_customer_id: customerId }).eq("id", userId);
+    const { error: e2 } = await admin.from("profiles").update({ ...update, stripe_customer_id: customerId }).eq("id", userId);
+    if (e2) throw new Error(`Falha ao atualizar o perfil: ${e2.message}`);
   }
 }
 
@@ -32,6 +34,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid signature" }, { status: 400 });
   }
 
+  try {
+    await handle(stripe, event);
+  } catch (e) {
+    console.error("[stripe/webhook]", e);
+    return NextResponse.json({ error: "processing failed" }, { status: 500 });
+  }
+  return NextResponse.json({ received: true });
+}
+
+async function handle(stripe: Stripe, event: Stripe.Event) {
   switch (event.type) {
     case "checkout.session.completed": {
       const s = event.data.object;
@@ -47,5 +59,4 @@ export async function POST(request: Request) {
       await syncSubscription(event.data.object);
       break;
   }
-  return NextResponse.json({ received: true });
 }

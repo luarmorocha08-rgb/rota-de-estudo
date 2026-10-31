@@ -2,6 +2,15 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Brand } from "../components";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getStripe } from "@/lib/stripe";
+import { getClient, MODEL } from "@/lib/claude";
+import { describeError } from "@/lib/log";
+
+async function probe(fn: () => Promise<unknown>) {
+  try { await fn(); return { ok: true, msg: "Funcionando" }; }
+  catch (e) { return { ok: false, msg: describeError(e).replace(/(sk|rk|pk|mk)_[A-Za-z0-9_*]{6,}/g, "[chave oculta]") }; }
+}
 
 export const metadata: Metadata = { title: "Diagnóstico", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -27,6 +36,19 @@ export default async function Diagnostics() {
     const state = !v ? "faltando" : !c.ok(v) ? "formato errado" : raw !== v ? "tem espaço sobrando" : "ok";
     return { ...c, state };
   });
+  const [sbTest, stripeTest, aiTest] = await Promise.all([
+    probe(async () => {
+      const { error } = await createAdminClient().from("profiles").select("id", { count: "exact", head: true });
+      if (error) throw new Error(error.message || "chave recusada pelo Supabase (é de outro projeto?)");
+    }),
+    probe(() => getStripe().balance.retrieve()),
+    probe(() => getClient().models.retrieve(MODEL)),
+  ]);
+  const tests = [
+    { label: "Supabase com a chave secreta", r: sbTest },
+    { label: "Stripe", r: stripeTest },
+    { label: `IA (${MODEL})`, r: aiTest },
+  ];
   const stripeMode = (process.env.STRIPE_SECRET_KEY || "").includes("_live_") ? "real (cobra de verdade)" : (process.env.STRIPE_SECRET_KEY || "").includes("_test_") ? "teste" : "–";
 
   return (
@@ -46,6 +68,16 @@ export default async function Diagnostics() {
           <div style={{ padding: "12px 14px" }} className="muted">
             Modelo de IA: <b>{process.env.CLAUDE_MODEL || "claude-opus-5-5"}</b> · Modo do Stripe: <b>{stripeMode}</b> · Endereço do site: <b>{process.env.NEXT_PUBLIC_SITE_URL || "(automático)"}</b>
           </div>
+        </section>
+        <h2 style={{ fontSize: 22 }}>Teste de conexão</h2>
+        <section className="panel" style={{ padding: 8 }}>
+          {tests.map((t) => (
+            <div key={t.label} style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "2px 12px", padding: "12px 14px", borderBottom: "1px solid var(--line)" }}>
+              <span className={`tag ${t.r.ok ? "ok" : "warn"}`} style={{ gridRow: "span 2", alignSelf: "start" }}>{t.r.ok ? "OK" : "falhou"}</span>
+              <b>{t.label}</b>
+              <span className="muted" style={{ wordBreak: "break-word" }}>{t.r.msg}</span>
+            </div>
+          ))}
         </section>
         <p className="muted">Depois de corrigir uma variável na Vercel, faça Redeploy para ela valer.</p>
       </main>

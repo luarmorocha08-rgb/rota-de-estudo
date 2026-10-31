@@ -24,19 +24,24 @@ async function createCheckout(ctx: Ctx, base: string) {
   const stripe = getStripe();
   let customerId = ctx.profile?.stripe_customer_id ?? null;
   if (!customerId) {
-    const customer = await stripe.customers.create({
+    // Reaproveita um cliente já criado para esta pessoa (evita duplicados no Stripe)
+    const existing = ctx.user.email ? await stripe.customers.list({ email: ctx.user.email, limit: 10 }) : null;
+    const found = existing?.data.find((c) => c.metadata?.user_id === ctx.user.id);
+    const customer = found ?? (await stripe.customers.create({
       email: ctx.user.email,
       name: ctx.profile?.name ?? undefined,
       metadata: { user_id: ctx.user.id },
-    });
+    }));
     customerId = customer.id;
-    await createAdminClient().from("profiles").update({ stripe_customer_id: customerId }).eq("id", ctx.user.id);
+    const { error } = await createAdminClient().from("profiles").update({ stripe_customer_id: customerId }).eq("id", ctx.user.id);
+    if (error) throw new Error(`Não foi possível salvar o cliente do Stripe no perfil (confira SUPABASE_SERVICE_ROLE_KEY): ${error.message}`);
   }
 
   const priceId = process.env.STRIPE_PRICE_ID;
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customerId,
+    allowed_payment_method_types: ["card"],
     client_reference_id: ctx.user.id,
     line_items: [
       priceId
