@@ -1,0 +1,51 @@
+import { NextResponse } from "next/server";
+import type Stripe from "stripe";
+import { getStripe } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+async function syncSubscription(sub: Stripe.Subscription) {
+  const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+  const end = sub.items?.data?.[0]?.current_period_end;
+  const update = {
+    subscription_status: sub.status,
+    current_period_end: end ? new Date(end * 1000).toISOString() : null,
+  };
+  const admin = createAdminClient();
+  const { data } = await admin.from("profiles").update(update).eq("stripe_customer_id", customerId).select("id");
+  // Se o cliente ainda não estava ligado ao perfil, liga pelo user_id salvo na assinatura
+  const userId = sub.metadata?.user_id;
+  if ((!data || data.length === 0) && userId) {
+    await admin.from("profiles").update({ ...update, stripe_customer_id: customerId }).eq("id", userId);
+  }
+}
+
+export async function POST(request: Request) {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  const signature = request.headers.get("stripe-signature");
+  if (!secret || !signature) return NextResponse.json({ error: "missing signature" }, { status: 400 });
+
+  const stripe = getStripe();
+  let event: Stripe.Event;
+  try {
+    event = stripe.webhooks.constructEvent(await request.text(), signature, secret);
+  } catch {
+    return NextResponse.json({ error: "invalid signature" }, { status: 400 });
+  }
+
+  switch (event.type) {
+    case "checkout.session.completed": {
+      const s = event.data.object;
+      if (s.mode === "subscription" && s.subscription) {
+        const subId = typeof s.subscription === "string" ? s.subscription : s.subscription.id;
+        await syncSubscription(await stripe.subscriptions.retrieve(subId));
+      }
+      break;
+    }
+    case "customer.subscription.created":
+    case "customer.subscription.updated":
+    case "customer.subscription.deleted":
+      await syncSubscription(event.data.object);
+      break;
+  }
+  return NextResponse.json({ received: true });
+}
