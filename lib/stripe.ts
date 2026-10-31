@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { resolveSiteUrl } from "@/lib/site-url";
 
 let stripe: Stripe | null = null;
 export function getStripe() {
@@ -10,5 +11,6 @@ export function getStripe() {
 export const PRICE_CENTS = 2990; // R$ 29,90 por mês
 
 export function siteUrl(request: Request) {
-  return (process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin).replace(/\/$/, "");
+  const url = new URL(request.url);
+  return resolveSiteUrl(request.headers.get("x-forwarded-host") ?? url.host, request.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", ""));
 }

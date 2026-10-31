@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { resolveSiteUrl } from "@/lib/site-url";
 
 export type FormState = { error?: string; message?: string };
 
@@ -13,7 +14,7 @@ const safeNext = (v: FormDataEntryValue | null) => {
 
 async function origin() {
   const h = await headers();
-  return process.env.NEXT_PUBLIC_SITE_URL || `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
+  return resolveSiteUrl(h.get("x-forwarded-host") ?? h.get("host"), h.get("x-forwarded-proto"));
 }
 
 export async function login(_: FormState, form: FormData): Promise<FormState> {
