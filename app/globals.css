@@ -95,3 +95,32 @@ img{max-width:100%}
   .auth-side{padding:28px max(16px,env(safe-area-inset-left,0px));gap:18px}
   .auth-side ul{display:none}
 }
+
+/* Celular: topo do site, login e páginas internas mais enxutos */
+@media (max-width: 620px){
+  body{font-size:14px}
+  .lead{font-size:14.5px}
+  .btn{padding:11px 18px;font-size:14px}
+  .nav .w{padding-block:8px;gap:8px}
+  .nav .brand{font-size:16px;gap:8px;white-space:nowrap}
+  .nav .bubbles i{width:8px;height:8px}
+  .nav nav{gap:4px}
+  .nav .link{padding:7px 10px;font-size:13.5px}
+  .nav .btn{padding:8px 14px;font-size:13px;white-space:nowrap}
+  .auth-side{padding:20px 16px 22px;gap:14px}
+  .auth-side h2{font-size:22px}
+  .auth-main{padding:28px 16px 40px;place-items:start center}
+  .auth-card{gap:14px}
+  .auth-card h1{font-size:24px}
+  .field label{font-size:13px}
+  .field input{font-size:16px;padding:11px 13px}
+  .muted{font-size:13px}
+  .page{padding-block:20px 48px;gap:16px}
+  .page h1{font-size:24px}
+  .plan-card{padding:20px;gap:14px}
+  .price{font-size:36px}
+  .price small{font-size:14px}
+  .checks{gap:8px;font-size:14px}
+  .kv{gap:6px 14px;font-size:14px}
+}
+

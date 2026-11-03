@@ -71,3 +71,55 @@
   .mock-day{grid-template-columns:1fr}
   .toastm{right:8px}
 }
+
+/* Celular: tudo mais compacto, com cara de app */
+@media (max-width: 620px){
+  .hero{padding-block:24px 20px;gap:24px}
+  .hero .copy{gap:12px}
+  .hero .eyebrow{font-size:10.5px}
+  .hero h1{font-size:30px;letter-spacing:-.02em}
+  .hero .lead{font-size:14.5px}
+  .hero .ctas{flex-wrap:nowrap;gap:8px}
+  .hero .ctas .btn{flex:1;padding:12px 10px;font-size:14px;white-space:nowrap}
+  .hero .note{font-size:12px}
+  .mock{padding:16px;gap:10px}
+  .mock-top h3,.mock-top b{font-size:15px}
+  .mock-top .pill{font-size:11px;padding:4px 9px;white-space:nowrap}
+  .mock-day{gap:6px}
+  .blk{padding:8px 10px;font-size:12.5px}
+  .mock-q{padding:12px}
+  .mock-q p{font-size:13px}
+  .opt{padding:7px 9px;font-size:12.5px}
+  .toastm{font-size:12px;padding:7px 12px;bottom:-12px}
+  .strip{padding-block:4px 8px;gap:6px;flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;margin-inline:-16px;padding-inline:16px;scrollbar-width:none}
+  .strip::-webkit-scrollbar{display:none}
+  .strip span{flex:none;font-size:12.5px;padding:6px 12px}
+  .sec{padding-block:32px;gap:18px}
+  .sec-head{gap:6px}
+  .sec-head h2{font-size:24px}
+  .sec-head .lead{font-size:14px}
+  .feats{grid-template-columns:1fr 1fr;gap:10px}
+  .feat{padding:14px;gap:6px}
+  .feat .ico{width:36px;height:36px;border-radius:10px}
+  .feat .ico svg{width:19px;height:19px}
+  .feat h3{font-size:15px;line-height:1.2}
+  .feat p{font-size:12.5px;line-height:1.4}
+  .steps{display:flex;overflow-x:auto;gap:10px;scroll-snap-type:x mandatory;scroll-padding-inline:16px;margin-inline:-16px;padding-inline:16px;scrollbar-width:none}
+  .steps::-webkit-scrollbar{display:none}
+  .step{flex:0 0 78%;scroll-snap-align:start;padding:16px;gap:6px}
+  .step h3{font-size:16px}
+  .step p{font-size:13px}
+  .game{padding:22px 18px;gap:18px;border-radius:20px}
+  .game h2{font-size:23px}
+  .game p{font-size:14px}
+  .game li{padding:10px 12px;font-size:13.5px;gap:10px}
+  .pricing{gap:14px}
+  .pcard{padding:20px;gap:12px}
+  .pcard h3{font-size:18px}
+  .faq details{padding:12px 16px}
+  .faq summary{font-size:14.5px}
+  .faq details p{font-size:13.5px}
+  .final{padding-block:36px;gap:12px}
+  .final h2{font-size:26px}
+  .foot{font-size:12px}
+}
